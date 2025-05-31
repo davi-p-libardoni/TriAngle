@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <time.h>
 #include <allegro5/allegro.h>
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_ttf.h>
@@ -44,8 +45,36 @@ void eventExit(ALLEGRO_EVENT evento,int *rodando,int *current,int *extra,int *ex
     }
 }
 
-void getPartidas(Partida ptds,int modo, FILE *arq){
+int getPartidas(Partida ptds[],int modo, FILE *arq){
+    int flag = 1,i=0;
+    if(modo!=2) flag = 0;
+    char linha[50];
+    while(fgets(linha,50,arq)){
+        int modoTmp;
+        fgets(linha,sizeof(linha),arq);
+        sscanf(linha,"modo %d",&modoTmp);
+        if(modoTmp==modo || modo==2){
+            ptds[i].modo = modoTmp;
+            for(int j=0;j<3;j++){
+                fgets(linha,sizeof(linha),arq);
+                sscanf(linha,"%d %d %d",&ptds[i].matriz[j][0],&ptds[i].matriz[j][1],&ptds[i].matriz[j][2]);
+            }
+            fgets(linha,sizeof(linha),arq);
+            sscanf(linha,"minutos %d",&ptds[i].minutos);
 
+            fgets(linha,sizeof(linha),arq);
+            sscanf(linha,"segundos %d",&ptds[i].segundos);
+
+            fgets(linha,sizeof(linha),arq);
+            sscanf(linha,"vitoria %d",&ptds[i].vitoria);
+
+            fgets(linha,sizeof(linha),arq);
+            i++;
+        }else{
+            for(int j=0;j<7;j++) fgets(linha,sizeof(linha),arq);
+        }
+    }
+    return i;
 }
 
 int partidasArquivo(FILE *arq,int modo){
@@ -226,9 +255,11 @@ void displayPartida(int yOff,Partida ptds[3],int i,ALLEGRO_FONT *smallfont,ALLEG
 
     char texto[20];
     sprintf(texto,"Vencedor: %s",(ptds[i].vitoria)?"Vermelho":"Azul");
-    al_draw_text(smallfont,(ptds[i].vitoria)?red:blue,screenX/2-80,210+i*190,0,texto);
+    al_draw_text(smallfont,(ptds[i].vitoria)?red:blue,screenX/2-70,20+yOff,0,texto);
     sprintf(texto,"Tempo: %02d:%02d",ptds[i].minutos,ptds[i].segundos);
-    al_draw_text(smallfont,al_map_rgb(0,0,0),screenX/2-80,250+i*190,0,texto);
+    al_draw_text(smallfont,al_map_rgb(0,0,0),screenX/2-70,20+40+yOff,0,texto);
+    sprintf(texto,"Modo: %s",(ptds[i].modo==0)?"PvP":"PvC");
+    al_draw_text(smallfont,al_map_rgb(0,0,0),screenX/2-70,20+80+yOff,0,texto);
 }
 
 void victoryScreen(int *pvp,int *pvprodando,int *menu,int *exit,int tabuleiro[3][3],int modo,ALLEGRO_TIMER *timer,int turnos,Ponto tPts[7],ALLEGRO_COLOR cor,int *fichas,int jogador,ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont){
@@ -356,15 +387,15 @@ void selectGamemodeScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *smallfont,ALLEGRO_
     al_destroy_bitmap(iconPvC);
 }
 
-void gamemodeButton(ALLEGRO_EVENT evento,int *jogar,int *pvp,int *pve){
-    int offPvP=screenX/4-200, offPvE=((screenX/4)*3)-200, offY=150, endY=750;
+void gamemodeButton(ALLEGRO_EVENT evento,int *jogar,int *pvp,int *pvc){
+    int offPvP=screenX/4-200, offPvC=((screenX/4)*3)-200, offY=150, endY=750;
     if(evento.mouse.y>=offY && evento.mouse.y<=endY){
         if(evento.mouse.x>=offPvP && evento.mouse.x<=offPvP+400){
             *pvp = 1;
             *jogar = 0;
         }
-        if(evento.mouse.x>=offPvE && evento.mouse.x<=offPvE+400){
-            *pve = 1;
+        if(evento.mouse.x>=offPvC && evento.mouse.x<=offPvC+400){
+            *pvc = 1;
             *jogar = 0;
         }
     }
@@ -454,15 +485,54 @@ void partidaPvP(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_EVENT_QUEUE 
     }
 }
 
-void historicoScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FONT *smallfont,ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_COLOR blue,ALLEGRO_COLOR red,ALLEGRO_TIMER *timer,int *menu,int *historico, int *exit){
+int selecionarPrimeiro(){
+    srand(time(NULL));
+    return rand()%2;
+}
+
+void partidaPvC(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_COLOR blue, ALLEGRO_COLOR red,ALLEGRO_DISPLAY *janela,int *exit,int *pvc,int *menu, ALLEGRO_TIMER *timer, Ponto tPts[7]){
+    int primeiroJ,select=-1,redraw=1;
+    if(select==-1){
+        if(redraw==1){
+            al_clear_to_color(al_map_rgb(166, 179, 176));
+            al_draw_text(bigfont,al_map_rgb(0,0,0),screenX/2,50,ALLEGRO_ALIGN_CENTER,"Ordem de Jogada");
+            
+            al_draw_filled_rounded_rectangle(screenX/4-200,200,screenX/4+200,600,10,10,al_map_rgb(145, 209, 227));
+            al_draw_rounded_rectangle(screenX/4-200,200,screenX/4+200,600,10,10,al_map_rgb(0,0,0),3);
+            al_draw_text(medfont,al_map_rgb(0,0,0),screenX/4,400,ALLEGRO_ALIGN_CENTER,"Aleatório");
+
+            al_draw_filled_rounded_rectangle(screenX/4*3-200,200,screenX/4*3+200,390,10,10,blue);
+            al_draw_rounded_rectangle(screenX/4*3-200,200,screenX/4*3+200,390,10,10,al_map_rgb(0,0,0),3);
+            al_draw_text(medfont,al_map_rgb(0,0,0),screenX/4*3,295,ALLEGRO_ALIGN_CENTER,"Primeiro");
+
+            al_draw_filled_rounded_rectangle(screenX/4*3-200,410,screenX/4*3+200,600,10,10,red);
+            al_draw_rounded_rectangle(screenX/4*3-200,410,screenX/4*3+200,600,10,10,al_map_rgb(0,0,0),3);
+            al_draw_text(medfont,al_map_rgb(0,0,0),screenX/4*3,505,ALLEGRO_ALIGN_CENTER,"Segundo");
+            
+            redraw=0;
+            al_flip_display();
+        }
+    }else{
+        primeiroJ = (select==2)?selecionarPrimeiro():select;
+    }
+}
+
+void historicoScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FONT *smallfont,ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_COLOR blue,ALLEGRO_COLOR red,ALLEGRO_TIMER *timer,int *menu,int *historico, int *exit, int *mainRd){
     int rodando = 1,displayQtd,ini=0,active = 2,redraw = 1;
     al_start_timer(timer);
     FILE *arq = fopen("historico.txt","r");
     int linhas = partidasArquivo(arq,active);
-    Partida ptdsTodas[linhas],ptdsPvP[linhas],ptdsPvC[linhas],*ptdsActive;
-    getPartidas(*ptdsPvP,0,arq);
-    getPartidas(*ptdsPvC,1,arq);
-    getPartidas(*ptdsTodas,2,arq);
+    int sizeArray = (linhas>0)?linhas:1;
+    Partida ptdsTodas[sizeArray],ptdsPvP[sizeArray],ptdsPvC[sizeArray],*ptdsActive;
+    int lnPvP=0,lnPvC=0;
+    if(linhas>0){
+        lnPvP = getPartidas(ptdsPvP,0,arq);
+        rewind(arq);
+        lnPvC = getPartidas(ptdsPvC,1,arq);
+        rewind(arq);
+        getPartidas(ptdsTodas,2,arq);
+        fclose(arq);
+    }
     while(rodando){
         ALLEGRO_EVENT evento;
         al_wait_for_event(queue,&evento);
@@ -473,14 +543,10 @@ void historicoScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FONT *s
                 *menu = 1;
                 *historico = 0;
                 rodando = 0;
+                *mainRd = 1;
             }
         }
         
-        switch(active){
-            case 0: ptdsActive = ptdsPvP; break;
-            case 1: ptdsActive = ptdsPvC; break;
-            case 2: ptdsActive = ptdsTodas; break;
-        }
         displayQtd = 3;
         char linha[50];
         int i = 0,lns=0;
@@ -490,38 +556,16 @@ void historicoScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FONT *s
         }
 
         if(linhas>0){
-            if(displayQtd+ini>linhas){displayQtd = linhas-ini;}
+            switch(active){
+                case 0: ptdsActive = ptdsPvP; break;
+                case 1: ptdsActive = ptdsPvC; break;
+                case 2: ptdsActive = ptdsTodas; break;
+            }
+            int lnActive = (active==0)?lnPvP:(active==1)?lnPvC:linhas;
+            if(displayQtd+ini>lnActive){displayQtd = lnActive-ini;}
             Partida ptds[3];
             for(int j = 0;j<displayQtd;j++)
-                ptds[j] = ptdsActive[j];
-            
-            while(i<displayQtd){
-                int modoTmp;
-                fgets(linha,50,arq);
-
-                fgets(linha,sizeof(linha),arq);
-                sscanf(linha,"modo %d",&modoTmp);
-                lns++;
-                if(modoTmp==active || active==2){
-                    ptds[i].modo = modoTmp;
-                    for(int j=0;j<3;j++){
-                        fgets(linha,sizeof(linha),arq);
-                        sscanf(linha,"%d %d %d",&ptds[i].matriz[j][0],&ptds[i].matriz[j][1],&ptds[i].matriz[j][2]);
-                    }
-                    fgets(linha,sizeof(linha),arq);
-                    sscanf(linha,"minutos %d",&ptds[i].minutos);
-                    
-                    fgets(linha,sizeof(linha),arq);
-                    sscanf(linha,"segundos %d",&ptds[i].segundos);
-                    
-                    fgets(linha,sizeof(linha),arq);
-                    sscanf(linha,"vitoria %d",&ptds[i].vitoria);
-                    
-                    fgets(linha,sizeof(linha),arq);
-                    i++;
-                }
-            }
-            fclose(arq);
+                ptds[j] = ptdsActive[j+ini];
 
             if(redraw){
                 al_clear_to_color(al_map_rgb(166, 179, 176));
@@ -548,22 +592,22 @@ void historicoScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FONT *s
                 
                 for(int i=0;i<displayQtd;i++){
                     int yOff = 170+i*190;
-                    displayPartida(170+i*190,ptds,i,smallfont,red,blue);
+                    displayPartida(180+i*190,ptds,i,smallfont,red,blue);
                 }
 
-                if(linhas>displayQtd){
+                if(lnActive>displayQtd){
                     if(ini>0){
-                        al_draw_filled_rounded_rectangle((screenX/2)-280,720,(screenX/2)-80,780,10,10,al_map_rgb(145, 209, 227));   
-                        al_draw_rounded_rectangle((screenX/2)-280,720,(screenX/2)-80,780,10,10,al_map_rgb(0,0,0),4);
-                        al_draw_text(smallfont,al_map_rgb(0,0,0),screenX/2-172,750,ALLEGRO_ALIGN_CENTER,"Anterior");
+                        al_draw_filled_rounded_rectangle((screenX/2)-250,740,(screenX/2)-100,780,10,10,al_map_rgb(145, 209, 227));   
+                        al_draw_rounded_rectangle((screenX/2)-250,740,(screenX/2)-100,780,10,10,al_map_rgb(0,0,0),4);
+                        al_draw_text(smallfont,al_map_rgb(0,0,0),screenX/2-175,750,ALLEGRO_ALIGN_CENTER,"Anterior");
                     }
-                    if(ini+3<linhas){
-                        al_draw_filled_rounded_rectangle((screenX/2)+80,720,(screenX/2)+280,780,10,10,al_map_rgb(145, 209, 227));   
-                        al_draw_rounded_rectangle((screenX/2)+80,720,(screenX/2)+280,780,10,10,al_map_rgb(0,0,0),4);
-                        al_draw_text(smallfont,al_map_rgb(0,0,0),screenX/2+172,750,ALLEGRO_ALIGN_CENTER,"Próximo");
+                    if(ini+3<lnActive){
+                        al_draw_filled_rounded_rectangle((screenX/2)+100,740,(screenX/2)+250,780,10,10,al_map_rgb(145, 209, 227));   
+                        al_draw_rounded_rectangle((screenX/2)+100,740,(screenX/2)+250,780,10,10,al_map_rgb(0,0,0),4);
+                        al_draw_text(smallfont,al_map_rgb(0,0,0),screenX/2+175,750,ALLEGRO_ALIGN_CENTER,"Próximo");
                     }
                     char texto[20];
-                    sprintf(texto,"Página %d/%d",ini/3+1,(linhas+2)/3); 
+                    sprintf(texto,"Página %d/%d",ini/3+1,(lnActive+2)/3); 
                     al_draw_text(smallfont,al_map_rgb(0,0,0),screenX/2,750,ALLEGRO_ALIGN_CENTER,texto);
                 }
                 redraw = 0;
@@ -578,14 +622,14 @@ void historicoScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FONT *s
                 if(active != last) ini = 0;
             }
 
-            if(linhas>displayQtd){
+            if(lnActive>displayQtd){
                 if(ini>0){
-                    if(evento.type=ALLEGRO_EVENT_MOUSE_BUTTON_UP && evento.mouse.button == 1 && inRange(evento.mouse.x,screenX/2-180,100) && inRange(evento.mouse.y,750,30)){
+                    if(evento.type==ALLEGRO_EVENT_MOUSE_BUTTON_UP && evento.mouse.button == 1 && inRange(evento.mouse.x,screenX/2-180,100) && inRange(evento.mouse.y,750,30)){
                         ini = ini-3;
                     }
                 }
-                if(ini+3<linhas){
-                    if(evento.type=ALLEGRO_EVENT_MOUSE_BUTTON_UP && evento.mouse.button == 1 && inRange(evento.mouse.x,screenX/2+180,100) && inRange(evento.mouse.y,750,30)){
+                if(ini+3<lnActive){
+                    if(evento.type==ALLEGRO_EVENT_MOUSE_BUTTON_UP && evento.mouse.button == 1 && inRange(evento.mouse.x,screenX/2+180,100) && inRange(evento.mouse.y,750,30)){
                         ini = ini+3;
                     }
                 }
@@ -602,7 +646,7 @@ void historicoScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FONT *s
 
 int main(){
     ALLEGRO_DISPLAY *janela = NULL;
-    int rodando=1,menu=1,help = 0,jogar = 0,historico = 0,pvp = 0,pve = 0,exit = 0,mouse_x,mouse_y;
+    int rodando=1,menu=1,help = 0,jogar = 0,historico = 0,pvp = 0,pvc = 0,exit = 0,mouse_x,mouse_y,redraw = 1;
     
     al_init();
     al_init_font_addon();
@@ -639,31 +683,39 @@ int main(){
     tPts[6] = (Ponto){screenX/2+250,550,2,2};
 
     while(rodando){
-        al_show_mouse_cursor(janela);
         ALLEGRO_EVENT evento;
         al_wait_for_event(queue,&evento);
         
         if(jogar){
-            selectGamemodeScreen(bigfont,smallfont,blue,red);
-            if(evento.type==ALLEGRO_EVENT_MOUSE_BUTTON_UP && evento.mouse.button==1)
-                gamemodeButton(evento,&jogar,&pvp,&pve);
+            if(redraw){
+                redraw = 0;
+                selectGamemodeScreen(bigfont,smallfont,blue,red);
+            }
+            if(evento.type==ALLEGRO_EVENT_MOUSE_BUTTON_UP && evento.mouse.button==1){
+                gamemodeButton(evento,&jogar,&pvp,&pvc);
+                redraw=1;
+            }
         }
 
         if(historico){
+            al_stop_timer(timer);
             al_set_timer_count(timer,0);
-            historicoScreen(bigfont,medfont,smallfont,queue,blue,red,timer,&menu,&historico,&exit);
+            historicoScreen(bigfont,medfont,smallfont,queue,blue,red,timer,&menu,&historico,&exit,&redraw);
         }
 
         if(menu){
             int yOff = 200;
-            menuScreen(bigfont,medfont,yOff);
+            if(redraw){
+                redraw = 0;
+                menuScreen(bigfont,medfont,yOff);
+            }
             if(evento.type==ALLEGRO_EVENT_MOUSE_BUTTON_UP && evento.mouse.button == 1){
                 if(evento.mouse.x>=screenX/2-150 && evento.mouse.x<=screenX/2+150){
                     if(evento.mouse.y>=yOff+100 && evento.mouse.y<=yOff+160){
-                        jogar = 1; menu = 0;
+                        jogar = 1; menu = 0; redraw=1;
                     }
                     if(evento.mouse.y>=yOff+200 && evento.mouse.y<=yOff+260){
-                        help = 1; menu = 0;
+                        help = 1; menu = 0; redraw=1;
                     }
                     if(evento.mouse.y>=yOff+300 && evento.mouse.y<=yOff+360){
                         historico = 1; menu = 0;
@@ -676,8 +728,15 @@ int main(){
         }
             
         if(pvp){
+            al_stop_timer(timer);
             al_set_timer_count(timer,0);
             partidaPvP(bigfont,medfont,queue,blue,red,janela,&exit,&pvp,&menu,timer,tPts);
+        }
+        
+        if(pvc){
+            al_stop_timer(timer);
+            al_set_timer_count(timer,0);
+            partidaPvC(bigfont,medfont,queue,blue,red,janela,&exit,&pvc,&menu,timer,tPts);
         }
         
         if(exit)

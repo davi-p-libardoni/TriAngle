@@ -4,7 +4,7 @@ modo 0
 0 0 1
 0 -1 1
 minutos 0
-segundos 17
+segundos 13
 vitoria 1
 </JOGO>
 <JOGO>
@@ -40,7 +40,7 @@ modo 0
 1 0 1
 -1 0 1
 minutos 0
-segundos 8
+segundos 9
 vitoria 0
 </JOGO>
 <JOGO>
@@ -51,4 +51,22 @@ modo 0
 minutos 0
 segundos 8
 vitoria 0
+</JOGO>
+<JOGO>
+modo 0
+-1 0 -1
+0 1 -1
+0 1 1
+minutos 0
+segundos 17
+vitoria 0
+</JOGO>
+<JOGO>
+modo 0
+-1 1 -1
+-1 1 0
+0 1 0
+minutos 0
+segundos 20
+vitoria 1
 </JOGO>
