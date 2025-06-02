@@ -1,5 +1,6 @@
 <JOGO>
 modo 0
+jogador 0
 -1 1 -1
 0 0 1
 0 -1 1
@@ -9,6 +10,7 @@ vitoria 1
 </JOGO>
 <JOGO>
 modo 0
+jogador 0
 -1 0 -1
 1 -1 0
 1 1 0
@@ -18,6 +20,7 @@ vitoria 0
 </JOGO>
 <JOGO>
 modo 0
+jogador 0
 -1 1 -1
 0 -1 1
 0 0 1
@@ -27,6 +30,7 @@ vitoria 1
 </JOGO>
 <JOGO>
 modo 1
+jogador 0
 -1 1 -1
 0 0 1
 0 -1 1
@@ -36,6 +40,7 @@ vitoria 1
 </JOGO>
 <JOGO>
 modo 0
+jogador 0
 -1 0 -1
 1 0 1
 -1 0 1
@@ -45,6 +50,7 @@ vitoria 0
 </JOGO>
 <JOGO>
 modo 0
+jogador 0
 -1 0 -1
 -1 0 1
 1 0 1
@@ -54,6 +60,7 @@ vitoria 0
 </JOGO>
 <JOGO>
 modo 0
+jogador 0
 -1 0 -1
 0 1 -1
 0 1 1
@@ -63,6 +70,7 @@ vitoria 0
 </JOGO>
 <JOGO>
 modo 0
+jogador 0
 -1 1 -1
 -1 1 0
 0 1 0
@@ -72,6 +80,7 @@ vitoria 1
 </JOGO>
 <JOGO>
 modo 0
+jogador 0
 -1 0 -1
 1 1 0
 -1 1 0
@@ -81,10 +90,261 @@ vitoria 0
 </JOGO>
 <JOGO>
 modo 0
+jogador 0
 -1 1 -1
 1 0 0
 1 -1 0
 minutos 0
 segundos 11
+vitoria 1
+</JOGO>
+<JOGO>
+modo 0
+jogador 0
+-1 1 -1
+0 0 0
+1 1 -1
+minutos 0
+segundos 48
+vitoria 0
+</JOGO>
+<JOGO>
+modo 1
+jogador 0
+-1 1 -1
+-1 0 1
+0 0 1
+minutos 0
+segundos 43
+vitoria 1
+</JOGO>
+<JOGO>
+modo 1
+jogador 1
+-1 1 -1
+1 0 0
+1 -1 0
+minutos 0
+segundos 10
+vitoria 1
+</JOGO>
+<JOGO>
+modo 1
+jogador 0
+-1 1 -1
+1 -1 0
+1 0 0
+minutos 0
+segundos 22
+vitoria 1
+</JOGO>
+<JOGO>
+modo 1
+jogador 1
+-1 1 -1
+0 0 0
+1 -1 1
+minutos 0
+segundos 9
+vitoria 0
+</JOGO>
+<JOGO>
+modo 1
+jogador 1
+-1 0 -1
+0 1 1
+0 -1 1
+minutos 0
+segundos 52
+vitoria 0
+</JOGO>
+<JOGO>
+modo 1
+jogador 0
+-1 0 -1
+0 -1 1
+0 1 1
+minutos 0
+segundos 11
+vitoria 0
+</JOGO>
+<JOGO>
+modo 1
+jogador 0
+-1 1 -1
+0 0 0
+-1 1 1
+minutos 0
+segundos 18
+vitoria 0
+</JOGO>
+<JOGO>
+modo 1
+jogador 0
+-1 0 -1
+0 0 -1
+1 1 1
+minutos 1
+segundos 3
+vitoria 1
+</JOGO>
+<JOGO>
+modo 1
+jogador 1
+-1 0 -1
+1 0 1
+-1 0 1
+minutos 0
+segundos 27
+vitoria 0
+</JOGO>
+<JOGO>
+modo 1
+jogador 1
+-1 0 -1
+1 -1 0
+1 1 0
+minutos 0
+segundos 52
+vitoria 0
+</JOGO>
+<JOGO>
+modo 1
+jogador 0
+-1 1 -1
+0 -1 0
+1 1 0
+minutos 0
+segundos 52
+vitoria -1
+</JOGO>
+<JOGO>
+modo 1
+jogador 0
+-1 0 -1
+1 0 0
+-1 1 1
+minutos 0
+segundos 32
+vitoria -1
+</JOGO>
+<JOGO>
+modo 0
+jogador 0
+-1 0 -1
+1 1 0
+-1 1 0
+minutos 0
+segundos 29
+vitoria 0
+</JOGO>
+<JOGO>
+modo 1
+jogador 1
+-1 1 -1
+0 0 1
+0 -1 1
+minutos 0
+segundos 44
+vitoria 1
+</JOGO>
+<JOGO>
+modo 1
+jogador 0
+-1 0 -1
+1 1 1
+-1 0 0
+minutos 0
+segundos 44
+vitoria 1
+</JOGO>
+<JOGO>
+modo 0
+jogador 0
+-1 0 -1
+0 0 -1
+1 1 1
+minutos 1
+segundos 2
+vitoria 1
+</JOGO>
+<JOGO>
+modo 1
+jogador 0
+-1 0 -1
+1 1 1
+0 -1 0
+minutos 0
+segundos 22
+vitoria 1
+</JOGO>
+<JOGO>
+modo 1
+jogador 1
+-1 0 -1
+-1 1 0
+1 1 0
+minutos 0
+segundos 45
+vitoria 0
+</JOGO>
+<JOGO>
+modo 0
+jogador 0
+-1 1 -1
+0 -1 1
+0 0 1
+minutos 0
+segundos 59
+vitoria 1
+</JOGO>
+<JOGO>
+modo 0
+jogador 0
+-1 1 -1
+0 -1 1
+0 0 1
+minutos 0
+segundos 52
+vitoria 1
+</JOGO>
+<JOGO>
+modo 0
+jogador 0
+-1 1 -1
+0 -1 1
+0 0 1
+minutos 0
+segundos 49
+vitoria 1
+</JOGO>
+<JOGO>
+modo 0
+jogador 0
+-1 0 -1
+1 0 1
+-1 0 -1
+minutos 0
+segundos 4
+vitoria 0
+</JOGO>
+<JOGO>
+modo 0
+jogador 0
+-1 1 -1
+0 -1 1
+0 0 1
+minutos 1
+segundos 23
+vitoria 1
+</JOGO>
+<JOGO>
+modo 0
+jogador 0
+-1 1 -1
+0 -1 1
+0 0 1
+minutos 0
+segundos 50
 vitoria 1
 </JOGO>
