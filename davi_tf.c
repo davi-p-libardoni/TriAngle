@@ -22,18 +22,21 @@ typedef struct{
 typedef struct{
     int matriz[3][3],tempo,modo,jogador,next,fichasp0,fichasp1,turno;
 } Save;
-int adj[3][2] = {
-    {1,2},
-    {0,2},
-    {0,1}
-};
 
 void partidaPvP(int tabuleiro[3][3],int fichas[2],int jogador,int tempo,int turno,ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_COLOR blue, ALLEGRO_COLOR red,int *exit,int *pvp,int *menu, ALLEGRO_TIMER *timer, Ponto tPts[7],int loaded);
 void partidaPvC(int tabuleiro[3][3],int fichas[2],int jogador,int vezJ,int tempo,int turno,ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_COLOR blue, ALLEGRO_COLOR red,int *exit,int *pvc,int *menu, ALLEGRO_TIMER *timer, Ponto tPts[7],int loaded);
+void deleteSave(int modo);
 
 int inRange(int n,int target,int r){
     if(n>=target-r && n<=target+r) return 1;
     return 0;
+}
+
+int isFileEmpty(FILE *arq){
+    fseek(arq,0,SEEK_END);
+    int final = ftell(arq);
+    rewind(arq);
+    return final==0;
 }
 
 int isValidMove(int iniL,int iniC,int fimL,int fimC,int tabuleiro[3][3]){
@@ -129,19 +132,11 @@ int partidasArquivo(FILE *arq,int modo){
     return linhas;
 }
 
-void desenharFichas(int fichas[2],int tabuleiro[3][3],int jogador,Ponto *tPts,int selecionado,int size){
+void desenharFichas(int fichas[2],int tabuleiro[3][3],int jogador,Ponto *tPts,int selecionado,ALLEGRO_BITMAP *blueChip,ALLEGRO_BITMAP *redChip,int chipOffset){
     int i,ini[2] = {100,screenX/2+50},fim[2] = {screenX/2-50,screenX-100},iniY=600,fimY=700,l,c;
     ALLEGRO_BITMAP *chips[2];
-    int chipOffset;
-    if(!size){
-        chips[0] = al_load_bitmap("assets/blueChip.png");
-        chips[1] = al_load_bitmap("assets/redChip.png");
-        chipOffset = 40;
-    }else{
-        chips[0] = al_load_bitmap("assets/blueChipSmall.png");
-        chips[1] = al_load_bitmap("assets/redChipSmall.png");
-        chipOffset = 10;
-    }
+    chips[0] = blueChip;
+    chips[1] = redChip;
     
     if(selecionado == 8){
         if(fichas[0]==1){
@@ -177,8 +172,6 @@ void desenharFichas(int fichas[2],int tabuleiro[3][3],int jogador,Ponto *tPts,in
             }
         }
     }
-    al_destroy_bitmap(chips[0]);
-    al_destroy_bitmap(chips[1]);
 }
 
 void desenharTabuleiro(Ponto *tPts,int yOffConst){
@@ -226,7 +219,7 @@ void mostrarMovimentos(int jogador,int tabuleiro[3][3],Ponto *tPts,int select,AL
     }
 }
 
-void interfacePartida(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,int minutos,int segundos,Ponto tPts[7],int jogador,int fichas[2],int tabuleiro[3][3],int selecionado,ALLEGRO_COLOR cores[2],int turno,int p1,int modo){
+void interfacePartida(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,int minutos,int segundos,Ponto tPts[7],int jogador,int fichas[2],int tabuleiro[3][3],int selecionado,ALLEGRO_COLOR cores[2],int turno,int p1,int modo,ALLEGRO_BITMAP *blueChip,ALLEGRO_BITMAP *redChip){
     char text[30];
     al_clear_to_color(al_map_rgb(166, 179, 176));
     al_draw_filled_rounded_rectangle(screenX/2-250,740,screenX/2-50,800,10,10,al_map_rgb(145, 209, 227));
@@ -240,7 +233,7 @@ void interfacePartida(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,int minutos,in
     al_draw_text(medfont,al_map_rgb(0,0,0),50,25,0,text);
     desenharTabuleiro(tPts,500);
     if(fichas[jogador]==0) mostrarMovimentos(jogador,tabuleiro,tPts,selecionado,cores);
-    desenharFichas(fichas,tabuleiro,jogador,tPts,selecionado,0);
+    desenharFichas(fichas,tabuleiro,jogador,tPts,selecionado,blueChip,redChip,40);
     sprintf(text,"Turno %d",turno);
     al_draw_textf(bigfont,al_map_rgb(0,0,0),screenX/2,30,ALLEGRO_ALIGN_CENTER,text);
     int position = (jogador==0)?screenX/4:screenX/4*3;
@@ -276,19 +269,26 @@ int checkVitoria(int tabuleiro[3][3]){
 
 void salvarJogo(int modo,int vezJ,int tabuleiro[3][3],int fichas[2],int jogador,int tempo,int turno){
     FILE *arq = fopen("saves.txt","r+");
-    char linha[30],header[30];
-    long existingPos=-1;
-    sprintf(header,">SAVE modo %d",modo);
-    while(fgets(linha,sizeof(linha),arq)){
-        if(strncmp(linha,header,strlen(header))==0){
-            existingPos = ftell(arq);
-        }
-    }
-    if(existingPos!=-1){
-        fseek(arq,existingPos-1,SEEK_SET);
-    }else{
-        fseek(arq,0,SEEK_END);
+    if(!arq){
+        arq = fopen("saves.txt","w");
         fprintf(arq,">SAVE modo %d\n",modo);
+    }else{
+        char linha[30],header[30];
+        long existingPos=-1;
+        sprintf(header,">SAVE modo %d",modo);
+        while(fgets(linha,sizeof(linha),arq)){
+            if(strncmp(linha,header,strlen(header))==0){
+                existingPos = ftell(arq);
+            }
+        }
+        if(existingPos!=-1){
+            fseek(arq,existingPos,SEEK_SET);
+        }else{
+            char texto[20];
+            if(isFileEmpty(arq)){ sprintf(texto,">SAVE modo "); }else { sprintf(texto,"\n>SAVE modo "); }
+            fseek(arq,0,SEEK_END);
+            fprintf(arq,"%s%d\n",texto,modo);
+        }
     }
     fprintf(arq,"vezJ %d\n",vezJ);
     for(int i=0;i<3;i++){
@@ -298,7 +298,7 @@ void salvarJogo(int modo,int vezJ,int tabuleiro[3][3],int fichas[2],int jogador,
     fprintf(arq,"fichasp1 %d\n",fichas[1]);
     fprintf(arq,"next %d\n",jogador);
     fprintf(arq,"tempo %d\n",tempo);
-    fprintf(arq,"turno %d\n",turno);
+    fprintf(arq,"turno %d",turno);
     fclose(arq);
 }
 
@@ -315,7 +315,7 @@ void desenharLinhaVitoria(Ponto tPts[7],int tabuleiro[3][3],ALLEGRO_COLOR cor,in
     al_draw_line(pts[1][0],pts[1][1],pts[2][0],pts[2][1],cor,grossura);
 }
 
-void displayPartida(int yOff,Partida ptds[3],int i,ALLEGRO_FONT *smallfont,ALLEGRO_COLOR red,ALLEGRO_COLOR blue){
+void displayPartida(int yOff,Partida ptds[3],int i,ALLEGRO_FONT *smallfont,ALLEGRO_COLOR blue,ALLEGRO_COLOR red,ALLEGRO_BITMAP *blueChip,ALLEGRO_BITMAP *redChip){
     al_draw_rounded_rectangle(screenX/2-250,yOff,screenX/2+250,yOff+150,8,8,al_map_rgb(0,0,0),4);
     al_draw_filled_rounded_rectangle(screenX/2-250,yOff,screenX/2+250,yOff+150,8,8,al_map_rgb(128, 146, 142));
 
@@ -333,7 +333,7 @@ void displayPartida(int yOff,Partida ptds[3],int i,ALLEGRO_FONT *smallfont,ALLEG
     if(ptds[i].vitoria!=-1){
         desenharLinhaVitoria(pts,ptds[i].matriz,(ptds[i].vitoria)?red:blue,ptds[i].vitoria,5);
     }
-    desenharFichas(fichas,ptds[i].matriz,ptds[i].vitoria,pts,-1,1);
+    desenharFichas(fichas,ptds[i].matriz,ptds[i].vitoria,pts,-1,blueChip,redChip,10);
 
     char texto[20],vencedor[20];
     ALLEGRO_COLOR corVenc;
@@ -357,6 +357,7 @@ void displayPartida(int yOff,Partida ptds[3],int i,ALLEGRO_FONT *smallfont,ALLEG
 void victoryScreen(int *pvp,int *pvprodando,int *menu,int *exit,int tabuleiro[3][3],int modo,ALLEGRO_TIMER *timer,int turnos,Ponto tPts[7],ALLEGRO_COLOR cor,int *fichas,int jogador,ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,int vezJ,int loaded){
     int rodando = 1,seconds = al_get_timer_count(timer)*al_get_timer_speed(timer),minutos = seconds/60,segundos = seconds%60;
     char text[50],vitorioso[20];
+    ALLEGRO_BITMAP *blueChip = al_load_bitmap("assets/blueChip.png"),*redChip = al_load_bitmap("assets/redChip.png");
 
     FILE *arq = fopen("historico.txt","a");
     fprintf(arq,"<JOGO>\n");
@@ -393,7 +394,7 @@ void victoryScreen(int *pvp,int *pvprodando,int *menu,int *exit,int tabuleiro[3]
             al_draw_text(bigfont,cor,screenX/2,50,ALLEGRO_ALIGN_CENTER,text);
             desenharLinhaVitoria(tPts,tabuleiro,cor,jogador,8);
         }
-        desenharFichas(fichas,tabuleiro,jogador,tPts,8,0);
+        desenharFichas(fichas,tabuleiro,jogador,tPts,8,blueChip,redChip,40);
 
         if(evento.type==ALLEGRO_EVENT_MOUSE_BUTTON_UP && evento.mouse.button==1){
             if(evento.mouse.y>=720 && evento.mouse.y<=800){
@@ -427,6 +428,8 @@ void victoryScreen(int *pvp,int *pvprodando,int *menu,int *exit,int tabuleiro[3]
 
         al_flip_display();
     }
+    al_destroy_bitmap(blueChip);
+    al_destroy_bitmap(redChip);
 }
 
 Save getSave(int modo){
@@ -454,6 +457,7 @@ Save getSave(int modo){
             sscanf(linha,"tempo %d",&save.tempo);
             fgets(linha,sizeof(linha),arq);
             sscanf(linha,"turno %d",&save.turno);
+            break;
         }
     }
     fclose(arq);
@@ -461,7 +465,26 @@ Save getSave(int modo){
 }
 
 void deleteSave(int modo){
-    
+    FILE *arq = fopen("saves.txt","r");
+    if(!arq) return;
+    FILE *tmp = fopen("savestmp.txt","w");
+    int pular = 1;
+    char linha[30];
+    while(fgets(linha,sizeof(linha),arq)){
+        if(strncmp(linha,">SAVE modo ",11)==0){
+            int lerModo;
+            sscanf(linha,">SAVE modo %d",&lerModo);
+            pular = (lerModo==modo)?1:0;
+        }
+        
+        if(!pular){
+            fputs(linha,tmp);
+        }
+    }
+    fclose(arq);
+    fclose(tmp);
+    remove("saves.txt");
+    rename("savestmp.txt","saves.txt");
 }
 
 void menuScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,int yOff){
@@ -509,10 +532,15 @@ void selectGamemodeScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FO
     int rodando=1,redraw = 1,savePvP=0,savePvC=0;
     char line[30];
     FILE *arq = fopen("saves.txt","r");
-
-    while(fgets(line,sizeof(line),arq)){
-        if(strncmp(line,">SAVE modo 0",12)==0) savePvP = 1;
-        if(strncmp(line,">SAVE modo 1",12)==0) savePvC = 1;
+    if(!arq){
+        savePvP = 0;
+        savePvC = 0;
+    }else{
+        while(fgets(line,sizeof(line),arq)){
+            if(strncmp(line,">SAVE modo 0",12)==0) savePvP = 1;
+            if(strncmp(line,">SAVE modo 1",12)==0) savePvC = 1;
+        }
+        fclose(arq);
     }
     int offPvP=screenX/4-200, offPvC=((screenX/4)*3)-200;
     int offY=150, endPvPY=(savePvP)?650:750,endPvCY=(savePvC)?650:750;
@@ -595,8 +623,8 @@ void selectGamemodeScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FO
         }
     }
 
-    al_stop_timer(timer);
-    al_destroy_timer(timer);
+    al_stop_timer(tick);
+    al_destroy_timer(tick);
     al_destroy_bitmap(iconPvP);
     al_destroy_bitmap(iconPvC);
 }
@@ -683,6 +711,11 @@ int verificarInimigosAdj(int l,int c,int tabuleiro[3][3],int jogador){
 
 int verificarAlinhamento(int l,int c,int tabuleiro[3][3],int jogador){
     int align = 0,inimigo = !jogador;
+    int adj[3][2] = {
+        {1,2},
+        {0,2},
+        {0,1}
+    };
     if(l==0){
         for(int j=0;j<3;j++) if(tabuleiro[1][j]==jogador || tabuleiro[2][j]==jogador) align++;
     }else{
@@ -797,6 +830,7 @@ void partidaPvP(int tabuleiro[3][3],int fichas[2],int jogador,int tempo,int turn
     int rodando=1,selecionado=-1,redraw=1,pause = 0,save = 0;
     char text[50];
     ALLEGRO_COLOR cores[] = {blue,red};
+    ALLEGRO_BITMAP *blueChip = al_load_bitmap("assets/blueChip.png"),*redChip = al_load_bitmap("assets/redChip.png");
     
     al_set_timer_count(timer,(int64_t)(tempo/al_get_timer_speed(timer)));
     al_resume_timer(timer);
@@ -854,7 +888,7 @@ void partidaPvP(int tabuleiro[3][3],int fichas[2],int jogador,int tempo,int turn
                 al_resume_timer(timer);
             }
             
-            interfacePartida(bigfont,medfont,minutos,segundos,tPts,jogador,fichas,tabuleiro,selecionado,cores,turno,0,0);
+            interfacePartida(bigfont,medfont,minutos,segundos,tPts,jogador,fichas,tabuleiro,selecionado,cores,turno,0,0,blueChip,redChip);
             if(save){
                 int time = al_get_timer_count(timer)*al_get_timer_speed(timer);
                 salvarJogo(0,0,tabuleiro,fichas,jogador,time,turno);
@@ -869,14 +903,17 @@ void partidaPvP(int tabuleiro[3][3],int fichas[2],int jogador,int tempo,int turn
             }
         }
     }
+    al_destroy_bitmap(blueChip);
+    al_destroy_bitmap(redChip);
 }
 
 void partidaPvC(int tabuleiro[3][3],int fichas[2],int jogador,int vezJ,int tempo,int turno,ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_COLOR blue, ALLEGRO_COLOR red,int *exit,int *pvc,int *menu, ALLEGRO_TIMER *timer, Ponto tPts[7], int loaded){
     int rodando=1,selecionado=-1,redraw=1,pause=0,save=0;
     char text[50];
     ALLEGRO_COLOR cores[] = {blue,red};
+    ALLEGRO_BITMAP *blueChip = al_load_bitmap("assets/blueChip.png"),*redChip = al_load_bitmap("assets/redChip.png");
     
-    al_set_timer_count(timer,(int64_t)tempo);
+    al_set_timer_count(timer,(int64_t)tempo/al_get_timer_speed(timer));
     al_resume_timer(timer);
     int segundosTotal,minutos,segundos;
     while(rodando){
@@ -885,6 +922,10 @@ void partidaPvC(int tabuleiro[3][3],int fichas[2],int jogador,int vezJ,int tempo
 
         eventExit(evento,&rodando,pvc,pvc,exit);
 
+        if(*exit){
+            rodando = 0;
+            *pvc = 0;
+        }
         if(evento.type == ALLEGRO_EVENT_TIMER){
             redraw = 1;
             segundosTotal = al_get_timer_count(timer) * al_get_timer_speed(timer);
@@ -960,7 +1001,7 @@ void partidaPvC(int tabuleiro[3][3],int fichas[2],int jogador,int vezJ,int tempo
                     al_resume_timer(timer);
                 }
 
-                interfacePartida(bigfont,medfont,minutos,segundos,tPts,jogador,fichas,tabuleiro,selecionado,cores,turno,vezJ,1);
+                interfacePartida(bigfont,medfont,minutos,segundos,tPts,jogador,fichas,tabuleiro,selecionado,cores,turno,vezJ,1,blueChip,redChip);
 
                 if(save){
                     int time = al_get_timer_count(timer)*al_get_timer_speed(timer);
@@ -978,10 +1019,13 @@ void partidaPvC(int tabuleiro[3][3],int fichas[2],int jogador,int vezJ,int tempo
             }
         }
     }
+    al_destroy_bitmap(blueChip);
+    al_destroy_bitmap(redChip);
 }
 
 void historicoScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FONT *smallfont,ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_COLOR blue,ALLEGRO_COLOR red,ALLEGRO_TIMER *timer,int *menu,int *historico, int *exit, int *mainRd){
     int rodando = 1,displayQtd,ini=0,active = 2,redraw = 1,menorTempo[3],maiorTempo[3];
+    ALLEGRO_BITMAP *blueChip = al_load_bitmap("assets/blueChipSmall.png"),*redChip = al_load_bitmap("assets/redChipSmall.png");
     al_start_timer(timer);
     FILE *arq = fopen("historico.txt","r");
     int linhas = partidasArquivo(arq,active);
@@ -1059,7 +1103,7 @@ void historicoScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FONT *s
                 
                 for(int i=0;i<displayQtd;i++){
                     int yOff = 170+i*190;
-                    displayPartida(200+i*180,ptds,i,smallfont,red,blue);
+                    displayPartida(200+i*180,ptds,i,smallfont,blue,red,blueChip,redChip);
                 }
 
                 if(lnActive>displayQtd){
@@ -1111,6 +1155,8 @@ void historicoScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FONT *s
             }
         }
     }
+    al_destroy_bitmap(blueChip);
+    al_destroy_bitmap(redChip);
 }
 
 int main(){
