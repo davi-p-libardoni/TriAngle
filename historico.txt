@@ -391,26 +391,6 @@ vitoria 1
 <JOGO>
 modo 0
 jogador 0
-0 1 -1
-0 0 1
--229372820 21951 22
-minutos 542
-segundos 1
-vitoria -1
-</JOGO>
-<JOGO>
-modo 0
-jogador 0
-0 1 -1
-0 0 1
-245517420 21878 22
-minutos 541
-segundos 55
-vitoria -1
-</JOGO>
-<JOGO>
-modo 0
-jogador 0
 -1 0 -1
 1 0 1
 -1 0 1
@@ -487,4 +467,84 @@ jogador 0
 minutos 0
 segundos 37
 vitoria 0
+</JOGO>
+<JOGO>
+modo 1
+jogador 1
+-1 1 -1
+0 0 0
+1 1 -1
+minutos 0
+segundos 31
+vitoria 0
+</JOGO>
+<JOGO>
+modo 1
+jogador 0
+-1 0 -1
+1 0 1
+-1 0 -1
+minutos 0
+segundos 5
+vitoria 0
+</JOGO>
+<JOGO>
+modo 1
+jogador 1
+-1 0 -1
+-1 1 0
+1 1 0
+minutos 0
+segundos 12
+vitoria 0
+</JOGO>
+<JOGO>
+modo 1
+jogador 1
+-1 0 -1
+1 1 1
+0 0 -1
+minutos 1
+segundos 34
+vitoria 1
+</JOGO>
+<JOGO>
+modo 1
+jogador 0
+-1 0 -1
+1 -1 0
+1 1 0
+minutos 0
+segundos 35
+vitoria 0
+</JOGO>
+<JOGO>
+modo 1
+jogador 1
+-1 0 -1
+1 1 1
+-1 0 0
+minutos 0
+segundos 13
+vitoria 1
+</JOGO>
+<JOGO>
+modo 1
+jogador 1
+-1 0 -1
+0 1 -1
+0 1 1
+minutos 0
+segundos 7
+vitoria 0
+</JOGO>
+<JOGO>
+modo 1
+jogador 1
+-1 1 -1
+1 -1 0
+1 0 0
+minutos 0
+segundos 59
+vitoria 1
 </JOGO>

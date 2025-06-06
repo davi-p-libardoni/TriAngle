@@ -1,20 +1,10 @@
 >SAVE modo 0
 vezJ 0
 -1 -1 -1
--1 0 -1
--1 -1 -1
-fichasp0 2
-fichasp1 3
+0 0 1
+1 1 0
+fichasp0 0
+fichasp1 0
 next 1
-tempo 1
-turno 2
->SAVE modo 1
-vezJ 1
--1 -1 -1
--1 1 -1
--1 0 0
-fichasp0 1
-fichasp1 2
-next 1
-tempo 3
-turno 4
+tempo 11
+turno 8
