@@ -368,3 +368,23 @@ minutos 0
 segundos 59
 vitoria 1
 </JOGO>
+<JOGO>
+modo 0
+jogador 0
+-1 1 -1
+1 0 0
+1 0 -1
+minutos 0
+segundos 10
+vitoria 1
+</JOGO>
+<JOGO>
+modo 1
+jogador 1
+-1 1 -1
+0 1 -1
+0 0 1
+minutos 1
+segundos 23
+vitoria -1
+</JOGO>

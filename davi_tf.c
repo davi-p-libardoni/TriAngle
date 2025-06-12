@@ -23,6 +23,7 @@ typedef struct{
     int matriz[3][3],tempo,modo,jogador,next,fichasp0,fichasp1,turno;
 } Save;
 
+void jogarPartida(int modo,int vezJ,int tabuleiro[3][3],int fichas[2],int jogador,int tempo,int turno,ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_COLOR blue, ALLEGRO_COLOR red,int *exit,int *pvp,int *menu, ALLEGRO_TIMER *timer, Ponto tPts[7],int loaded);
 void partidaPvP(int tabuleiro[3][3],int fichas[2],int jogador,int tempo,int turno,ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_COLOR blue, ALLEGRO_COLOR red,int *exit,int *pvp,int *menu, ALLEGRO_TIMER *timer, Ponto tPts[7],int loaded);
 void partidaPvC(int tabuleiro[3][3],int fichas[2],int jogador,int vezJ,int tempo,int turno,ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_COLOR blue, ALLEGRO_COLOR red,int *exit,int *pvc,int *menu, ALLEGRO_TIMER *timer, Ponto tPts[7],int loaded);
 void deleteSave(int modo);
@@ -225,14 +226,19 @@ void mostrarMovimentos(int jogador,int tabuleiro[3][3],Ponto *tPts,int select,AL
     }
 }
 
+void desenharTimer(ALLEGRO_FONT *medfont,int minutos,int segundos){
+    char text[10];
+    al_draw_filled_rounded_rectangle(30,15,160,55,10,10,al_map_rgb(255, 228, 169));
+    sprintf(text,"%02d:%02d",minutos,segundos);
+    al_draw_text(medfont,al_map_rgb(0,0,0),95,25,ALLEGRO_ALIGN_CENTER,text);
+}
+
 void interfacePartida(ALLEGRO_BITMAP *partidabg,ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,int minutos,int segundos,Ponto tPts[7],int jogador,int fichas[2],int tabuleiro[3][3],int selecionado,ALLEGRO_COLOR cores[2],int turno,int p1,int modo,ALLEGRO_BITMAP *blueChip,ALLEGRO_BITMAP *redChip){
     char text[30];
     al_draw_bitmap(partidabg,0,0,0);
     desenharBotao(medfont,screenX/2-250,740,screenX/2-50,800,760,al_map_rgb(145,209,227),"Pausar");
     desenharBotao(medfont,screenX/2+50,740,screenX/2+250,800,760,al_map_rgb(145,209,227),"Salvar");
-
-    sprintf(text,"%02d:%02d",minutos,segundos);
-    al_draw_text(medfont,al_map_rgb(128,146,142),50,25,0,text);
+    desenharTimer(medfont,minutos,segundos);
     desenharTabuleiro(tPts,500);
     if(fichas[jogador]==0) mostrarMovimentos(jogador,tabuleiro,tPts,selecionado,cores);
     desenharFichas(fichas,tabuleiro,jogador,tPts,selecionado,blueChip,redChip,40);
@@ -531,7 +537,6 @@ void selectGamemodeScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FO
         al_wait_for_event(queue,&evento);
 
         eventExit(evento,&rodando,jogar,jogar,exit);
-        if(*exit) rodando = 0;
 
         if(evento.type==ALLEGRO_EVENT_TIMER) redraw = 1;
 
@@ -559,9 +564,9 @@ void selectGamemodeScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FO
                             Save partida = getSave(i);
                             int fichas[2] = {partida.fichasp0,partida.fichasp1};
                             if(i==0){
-                                partidaPvP(partida.matriz,fichas,partida.next,partida.tempo,partida.turno,bigfont,medfont,queue,blue,red,exit,pvp,menu,timer,tPts,1);
+                                jogarPartida(0,0,partida.matriz,fichas,partida.next,partida.tempo,partida.turno,bigfont,medfont,queue,blue,red,exit,pvp,menu,timer,tPts,1);
                             }else{
-                                partidaPvC(partida.matriz,fichas,partida.next,partida.jogador,partida.tempo,partida.turno,bigfont,medfont,queue,blue,red,exit,pvc,menu,timer,tPts,1);
+                                jogarPartida(1,partida.jogador,partida.matriz,fichas,partida.next,partida.tempo,partida.turno,bigfont,medfont,queue,blue,red,exit,pvc,menu,timer,tPts,1);
                             }
                             *jogar = 0;
                             rodando = 0;
@@ -810,42 +815,41 @@ void computerAction(int fichas[2],int tabuleiro[3][3],Ponto tPts[7],int jogador,
     tabuleiro[0][2] = -1;
 }
 
-void partidaPvP(int tabuleiro[3][3],int fichas[2],int jogador,int tempo,int turno,ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_COLOR blue, ALLEGRO_COLOR red,int *exit,int *pvp,int *menu, ALLEGRO_TIMER *timer, Ponto tPts[7],int loaded){
-    int rodando=1,selecionado=-1,redraw=1,pause = 0,save = 0;
+void jogarPartida(int modo,int vezJ, int tabuleiro[3][3],int fichas[2],int jogador, int tempo, int turno,ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_COLOR blue, ALLEGRO_COLOR red,int *exit,int *pvx,int *menu, ALLEGRO_TIMER *timer, Ponto tPts[7], int loaded){
+    int rodando=1,selecionado=-1,redraw=1,timerRedraw,pause=0,save=0,primeiraRodada = 1,vitoria = 0;
     char text[50];
     ALLEGRO_COLOR cores[] = {blue,red};
     ALLEGRO_BITMAP *partidabg = al_load_bitmap("assets/casteloBG.png"), *blueChip = al_load_bitmap("assets/blueChip.png"),*redChip = al_load_bitmap("assets/redChip.png");
     
-    al_set_timer_count(timer,(int64_t)(tempo/al_get_timer_speed(timer)));
-    al_resume_timer(timer);
+    al_set_timer_count(timer,(int64_t)tempo/al_get_timer_speed(timer));
+    if(modo==0) al_resume_timer(timer);
+    timerRedraw = (modo==0)?1:0;
     int segundosTotal,minutos,segundos;
     while(rodando){
         ALLEGRO_EVENT evento;
         al_wait_for_event(queue,&evento);
 
-        eventExit(evento,&rodando,pvp,pvp,exit);
+        eventExit(evento,&rodando,pvx,pvx,exit);
 
-        if(*exit){
-            rodando = 0;
-            *pvp = 0;
-        }
-        if (evento.type == ALLEGRO_EVENT_TIMER) {
-            redraw = 1;
+        if(evento.type == ALLEGRO_EVENT_TIMER){
+            timerRedraw = 1;
             segundosTotal = al_get_timer_count(timer) * al_get_timer_speed(timer);
             minutos = segundosTotal/60;
             segundos = segundosTotal%60;
         }
-
-        int vitoria = checkVitoria(tabuleiro);
-        if(vitoria!=-1){
-            al_stop_timer(timer);
-            victoryScreen(pvp,&rodando,menu,exit,tabuleiro,0,timer,turno,tPts,cores[vitoria],fichas,vitoria,queue,bigfont,medfont,0,loaded);
-            redraw = 0;
+        
+        if(modo == 0 || vezJ != -1){
+            vitoria = checkVitoria(tabuleiro);
+            if(vitoria!=-1){
+                al_stop_timer(timer);
+                victoryScreen(pvx,&rodando,menu,exit,tabuleiro,1,timer,turno,tPts,cores[vitoria],fichas,vitoria,queue,bigfont,medfont,vezJ,loaded);
+                redraw = 0;
+            }
         }
 
         if(turno>49){
             al_stop_timer(timer);
-            victoryScreen(pvp,&rodando,menu,exit,tabuleiro,0,timer,turno,tPts,al_map_rgb(0,0,0),fichas,vitoria,queue,bigfont,medfont,0,loaded);
+            victoryScreen(pvx,&rodando,menu,exit,tabuleiro,1,timer,turno,tPts,al_map_rgb(0,0,0),fichas,vitoria,queue,bigfont,medfont,vezJ,loaded);
             redraw = 0;
         }
 
@@ -859,30 +863,82 @@ void partidaPvP(int tabuleiro[3][3],int fichas[2],int jogador,int tempo,int turn
                 redraw = 1;
             }
             if(!pause){
-                gameAction(evento,fichas,tabuleiro,tPts,&jogador,&turno,&selecionado);
+                if(modo == 0 || jogador==vezJ){
+                    gameAction(evento,fichas,tabuleiro,tPts,&jogador,&turno,&selecionado);
+                    redraw = 1;
+                }
             }
         }
-        
+
+        if(modo==1){
+            if(vezJ==-1){
+                int validou = 0;
+                if(evento.type==ALLEGRO_EVENT_MOUSE_BUTTON_UP && evento.mouse.button==1){
+                    if(inRange(evento.mouse.x,screenX/4,200) && inRange(evento.mouse.y,400,200)){
+                        vezJ = randomBool();
+                        validou = 1;
+                    }
+                    if(inRange(evento.mouse.x,screenX/4*3,200) && inRange(evento.mouse.y,295,95)){
+                        vezJ = 0;
+                        validou = 1;
+                    }
+                    if(inRange(evento.mouse.x,screenX/4*3,200) && inRange(evento.mouse.y,505,95)){
+                        vezJ = 1;
+                        validou = 1;
+                    }
+                    if(validou){
+                        al_resume_timer(timer);
+                        timerRedraw = 1;
+                        minutos = 0;
+                        segundos = 0;
+                    }
+                }
+                if(redraw){
+                    al_clear_to_color(al_map_rgb(166, 179, 176));
+                    al_draw_text(bigfont,al_map_rgb(0,0,0),screenX/2,50,ALLEGRO_ALIGN_CENTER,"Ordem de Jogada");
+
+                    desenharBotao(medfont,screenX/4-200,200,screenX/4+200,600,400,al_map_rgb(145, 209, 227),"Aleatório");
+                    desenharBotao(medfont,screenX/4*3-200,200,screenX/4*3+200,390,295,blue,"Primeiro");
+                    desenharBotao(medfont,screenX/4*3-200,410,screenX/4*3+200,600,505,red,"Segundo");
+                    redraw=0;
+                    al_flip_display();
+                }
+                if(validou) redraw = 1;
+            }else{
+                if(jogador!=vezJ && primeiraRodada==0){
+                    al_rest(0.5);
+                    computerAction(fichas,tabuleiro,tPts,jogador,turno);
+                    turno++;
+                    jogador = !jogador;
+                }
+            }
+            primeiraRodada=0;
+        }
+        if(timerRedraw && (modo == 0 || vezJ != -1)){
+            desenharTimer(medfont,minutos,segundos);
+            timerRedraw = 0;
+            al_flip_display();
+        }
         if(redraw){
             if(pause){
                 int time = al_get_timer_count(timer)*al_get_timer_speed(timer);
                 al_stop_timer(timer);
-                pauseScreen(bigfont,medfont,pvp,&rodando,time,tPts,jogador,fichas,tabuleiro,turno,0,0,queue,menu,exit);
+                pauseScreen(bigfont,medfont,pvx,&rodando,time,tPts,jogador,fichas,tabuleiro,turno,modo,vezJ,queue,menu,exit);
                 pause = 0;
                 al_resume_timer(timer);
             }
-            
+
             if(rodando)
-                interfacePartida(partidabg,bigfont,medfont,minutos,segundos,tPts,jogador,fichas,tabuleiro,selecionado,cores,turno,0,0,blueChip,redChip);
+                interfacePartida(partidabg,bigfont,medfont,minutos,segundos,tPts,jogador,fichas,tabuleiro,selecionado,cores,turno,vezJ,modo,blueChip,redChip);
                 
             if(save){
                 int time = al_get_timer_count(timer)*al_get_timer_speed(timer);
-                salvarJogo(0,0,tabuleiro,fichas,jogador,time,turno);
+                salvarJogo(modo,vezJ,tabuleiro,fichas,jogador,time,turno);
                 al_draw_text(medfont,al_map_rgb(0, 255, 26),screenX-20,20,ALLEGRO_ALIGN_RIGHT,"Jogo Salvo!");
             }
-    
             redraw=0;
             al_flip_display();
+
             if(save){
                 al_rest(1.0);
                 save = 0;
@@ -891,122 +947,9 @@ void partidaPvP(int tabuleiro[3][3],int fichas[2],int jogador,int tempo,int turn
     }
     al_destroy_bitmap(blueChip);
     al_destroy_bitmap(redChip);
+    al_destroy_bitmap(partidabg);
 }
 
-void partidaPvC(int tabuleiro[3][3],int fichas[2],int jogador,int vezJ,int tempo,int turno,ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_COLOR blue, ALLEGRO_COLOR red,int *exit,int *pvc,int *menu, ALLEGRO_TIMER *timer, Ponto tPts[7], int loaded){
-    int rodando=1,selecionado=-1,redraw=1,pause=0,save=0,primeiraRodada = 1;
-    char text[50];
-    ALLEGRO_COLOR cores[] = {blue,red};
-    ALLEGRO_BITMAP *partidabg = al_load_bitmap("assets/casteloBG.png"), *blueChip = al_load_bitmap("assets/blueChip.png"),*redChip = al_load_bitmap("assets/redChip.png");
-    
-    al_set_timer_count(timer,(int64_t)tempo/al_get_timer_speed(timer));
-    al_resume_timer(timer);
-    int segundosTotal,minutos,segundos;
-    while(rodando){
-        ALLEGRO_EVENT evento;
-        al_wait_for_event(queue,&evento);
-
-        eventExit(evento,&rodando,pvc,pvc,exit);
-
-        if(*exit){
-            rodando = 0;
-            *pvc = 0;
-        }
-        if(evento.type == ALLEGRO_EVENT_TIMER){
-            redraw = 1;
-            segundosTotal = al_get_timer_count(timer) * al_get_timer_speed(timer);
-            minutos = segundosTotal/60;
-            segundos = segundosTotal%60;
-        }
-
-        if(vezJ==-1){
-            if(evento.type==ALLEGRO_EVENT_MOUSE_BUTTON_UP && evento.mouse.button==1){
-                if(inRange(evento.mouse.x,screenX/4,200) && inRange(evento.mouse.y,400,200)) vezJ = randomBool();
-                if(inRange(evento.mouse.x,screenX/4*3,200) && inRange(evento.mouse.y,295,95)) vezJ = 0;
-                if(inRange(evento.mouse.x,screenX/4*3,200) && inRange(evento.mouse.y,505,95)) vezJ = 1;
-            }
-            if(redraw){
-                al_clear_to_color(al_map_rgb(166, 179, 176));
-                al_draw_text(bigfont,al_map_rgb(0,0,0),screenX/2,50,ALLEGRO_ALIGN_CENTER,"Ordem de Jogada");
-                
-                desenharBotao(medfont,screenX/4-200,200,screenX/4+200,600,400,al_map_rgb(145, 209, 227),"Aleatório");
-                desenharBotao(medfont,screenX/4*3-200,200,screenX/4*3+200,390,295,blue,"Primeiro");
-                desenharBotao(medfont,screenX/4*3-200,410,screenX/4*3+200,600,505,red,"Segundo");
-                redraw=0;
-                al_flip_display();
-            }
-        }else{
-            int vitoria = checkVitoria(tabuleiro);
-            if(vitoria!=-1){
-                al_stop_timer(timer);
-                victoryScreen(pvc,&rodando,menu,exit,tabuleiro,1,timer,turno,tPts,cores[vitoria],fichas,vitoria,queue,bigfont,medfont,vezJ,loaded);
-                redraw = 0;
-            }
-
-            if(turno>49){
-                al_stop_timer(timer);
-                victoryScreen(pvc,&rodando,menu,exit,tabuleiro,1,timer,turno,tPts,al_map_rgb(0,0,0),fichas,vitoria,queue,bigfont,medfont,vezJ,loaded);
-                redraw = 0;
-            }
-
-            if(jogador==!vezJ){
-                if(primeiraRodada==0){
-                    al_rest(0.5);
-                    computerAction(fichas,tabuleiro,tPts,jogador,turno);
-                    turno++;
-                    jogador = !jogador;
-                }
-            }
-            if(evento.type==ALLEGRO_EVENT_MOUSE_BUTTON_UP && evento.mouse.button==1){
-
-                if(inRange(evento.mouse.x,screenX/2-150,50) && inRange(evento.mouse.y,770,30)){
-                    pause = 1;
-                    redraw = 1;
-                }
-                if(inRange(evento.mouse.x,screenX/2+150,50) && inRange(evento.mouse.y,770,30)){
-                    save = 1;
-                    redraw = 1;
-                }
-                if(!pause){
-                    if(jogador==vezJ){
-                        gameAction(evento,fichas,tabuleiro,tPts,&jogador,&turno,&selecionado);
-                        redraw = 1;
-                    }
-                }
-            }
-
-            if(redraw){
-                if(pause){
-                    int time = al_get_timer_count(timer)*al_get_timer_speed(timer);
-                    al_stop_timer(timer);
-                    pauseScreen(bigfont,medfont,pvc,&rodando,time,tPts,jogador,fichas,tabuleiro,turno,0,0,queue,menu,exit);
-                    pause = 0;
-                    al_resume_timer(timer);
-                }
-
-                interfacePartida(partidabg,bigfont,medfont,minutos,segundos,tPts,jogador,fichas,tabuleiro,selecionado,cores,turno,vezJ,1,blueChip,redChip);
-
-                if(save){
-                    int time = al_get_timer_count(timer)*al_get_timer_speed(timer);
-                    salvarJogo(1,vezJ,tabuleiro,fichas,jogador,time,turno);
-                    al_draw_text(medfont,al_map_rgb(0, 255, 26),screenX-20,20,ALLEGRO_ALIGN_RIGHT,"Jogo Salvo!");
-                }
-            
-                redraw=0;
-                al_flip_display();
-
-                if(save){
-                    al_rest(1.0);
-                    save = 0;
-                }
-                if(primeiraRodada && jogador!=vezJ) al_rest(0.5);
-            }
-        }
-        primeiraRodada=0;
-    }
-    al_destroy_bitmap(blueChip);
-    al_destroy_bitmap(redChip);
-}
 
 void historicoScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FONT *smallfont,ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_COLOR blue,ALLEGRO_COLOR red,int *menu,int *historico, int *exit, int *mainRd){
     int rodando = 1,displayQtd,ini=0,active = 2,redraw = 1,menorTempo[3],maiorTempo[3];
@@ -1113,6 +1056,7 @@ void historicoScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FONT *s
             }
         }else{
             if(redraw){
+                desenharBotao(medfont,30,40,190,100,60,al_map_rgb(145,209,227),"Voltar");
                 al_draw_text(bigfont,al_map_rgb(0,0,0),screenX/2,400,ALLEGRO_ALIGN_CENTER,"Nenhuma partida no histórico.");
                 redraw = 0;
                 al_flip_display();
@@ -1125,21 +1069,25 @@ void historicoScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FONT *s
     al_destroy_bitmap(bg);
 }
 
-void ajudaScreen(ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FONT *smallfont){
+void ajudaScreen(ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FONT *smallfont,int *exit, int *help){
     int pagina = 1,redraw = 1,rodando = 1;
     ALLEGRO_BITMAP *bg = al_load_bitmap("assets/menuBG.png");
     while(rodando){
         ALLEGRO_EVENT evento;
         al_wait_for_event(queue,&evento);
 
-        
+        eventExit(evento,&rodando,help,help,exit);
+        if(evento.type==ALLEGRO_EVENT_MOUSE_BUTTON_UP && evento.mouse.button==1){
+
+        }
 
         if(redraw){
             al_draw_bitmap(bg,0,0,0);
-            if(pagina>1) desenharBotao(medfont,20,780,240,840,800,al_map_rgb(71, 101, 94),"Anterior");
-            if(pagina<3) desenharBotao(medfont,screenX-240,780,screenX-20,840,800,al_map_rgb(71, 101, 94),"Próximo");
+            desenharBotao(medfont,30,20,190,80,40,al_map_rgb(145,209,227),"Voltar");
+            if(pagina>1) desenharBotao(medfont,20,780,240,840,800,al_map_rgb(145,209,227),"Anterior");
+            if(pagina<3) desenharBotao(medfont,screenX-240,780,screenX-20,840,800,al_map_rgb(145,209,227),"Próximo");
             if(pagina==1){
-
+                al_draw_text(bigfont,al_map_rgb(0,0,0),screenX/2,120,ALLEGRO_ALIGN_CENTER,"Como jogar Tri-Angle");
                 redraw = 0;
                 break;
             }
@@ -1211,7 +1159,7 @@ int main(){
         if(help){
             al_stop_timer(timer);
             al_set_timer_count(timer,0);
-            ajudaScreen(queue,bigfont,medfont,smallfont);
+            ajudaScreen(queue,bigfont,medfont,smallfont,&exit,&help);
         }
         if(menu){
             int yOff = 200;
@@ -1243,8 +1191,8 @@ int main(){
             for(int i=0;i<=2;i++){
                 for(int j=0;j<=2;j++) tabuleiro[i][j]=-1;
             }
-            if(pvp) partidaPvP(tabuleiro,fichas,0,0,1,bigfont,medfont,queue,blue,red,&exit,&pvp,&menu,timer,tPts,0);
-            if(pvc) partidaPvC(tabuleiro,fichas,0,-1,0,1,bigfont,medfont,queue,blue,red,&exit,&pvc,&menu,timer,tPts,0);
+            if(pvp) jogarPartida(0,0,tabuleiro,fichas,0,0,1,bigfont,medfont,queue,blue,red,&exit,&pvp,&menu,timer,tPts,0);
+            if(pvc) jogarPartida(1,-1,tabuleiro,fichas,0,0,1,bigfont,medfont,queue,blue,red,&exit,&pvc,&menu,timer,tPts,0);
         }
         
         if(exit)
