@@ -1069,40 +1069,63 @@ void historicoScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FONT *s
     al_destroy_bitmap(bg);
 }
 
-void ajudaScreen(ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FONT *smallfont,int *exit, int *help){
+void ajudaScreen(ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_FONT *smallfont,int *exit, int *help, int *menu){
     int pagina = 1,redraw = 1,rodando = 1;
-    ALLEGRO_BITMAP *bg = al_load_bitmap("assets/menuBG.png");
+    ALLEGRO_BITMAP *bg = al_load_bitmap("assets/menuBG.png"),*tab = al_load_bitmap("assets/screenshotVitoria.png");
     while(rodando){
         ALLEGRO_EVENT evento;
         al_wait_for_event(queue,&evento);
 
         eventExit(evento,&rodando,help,help,exit);
         if(evento.type==ALLEGRO_EVENT_MOUSE_BUTTON_UP && evento.mouse.button==1){
-
+            if(inRange(evento.mouse.x,130,110) && inRange(evento.mouse.y,810,30) && pagina>1) pagina--;
+            if(inRange(evento.mouse.x,screenX-130,110) && inRange(evento.mouse.y,810,30) && pagina<3) pagina++;
+            redraw = 1;
+            if(inRange(evento.mouse.x,110,80) && inRange(evento.mouse.y,50,30)){
+                rodando = 0;
+                *menu = 1;
+                *help = 0;
+            }
         }
 
         if(redraw){
             al_draw_bitmap(bg,0,0,0);
+            al_draw_filled_rounded_rectangle(30,100,screenX-30,screenY-100,10,10,al_map_rgb(215, 219, 218));
+            al_draw_rounded_rectangle(30,100,screenX-30,screenY-100,10,10,al_map_rgb(0,0,0),4);
+
             desenharBotao(medfont,30,20,190,80,40,al_map_rgb(145,209,227),"Voltar");
             if(pagina>1) desenharBotao(medfont,20,780,240,840,800,al_map_rgb(145,209,227),"Anterior");
             if(pagina<3) desenharBotao(medfont,screenX-240,780,screenX-20,840,800,al_map_rgb(145,209,227),"Próximo");
+
             if(pagina==1){
-                al_draw_text(bigfont,al_map_rgb(0,0,0),screenX/2,120,ALLEGRO_ALIGN_CENTER,"Como jogar Tri-Angle");
+                al_draw_text(bigfont,al_map_rgb(0,0,0),screenX/2,130,ALLEGRO_ALIGN_CENTER,"Regras do Tri-Angle");
+                al_draw_text(smallfont,al_map_rgb(0,0,0),screenX/2,180,ALLEGRO_ALIGN_CENTER,"O objetivo do jogo é alinhar 3 peças para vencer o oponente");
+                al_draw_bitmap(tab,screenX/2-150,210,0);
+                al_draw_text(medfont,al_map_rgb(0,0,0),screenX/2,500,ALLEGRO_ALIGN_CENTER,"O jogo possui duas fases:");
+                al_draw_text(smallfont,al_map_rgb(0,0,0),screenX/2-420,540,0,"1 - Fase de Posicionamento:");
+                al_draw_multiline_text(smallfont,al_map_rgb(0,0,0),screenX/2-420,570,400,20,0,"Cada jogador posiciona uma peça por turno, clicando onde deseja posicionar.");
+                al_draw_text(smallfont,al_map_rgb(0,0,0),screenX/2+50,540,0,"2 - Fase de Movimento:");
+                al_draw_multiline_text(smallfont,al_map_rgb(0,0,0),screenX/2+50,570,400,20,0,"Cada jogador movimenta uma peça por turno, clicando para selecionar uma peça e clicando novamente na sua posição final desejada.");
                 redraw = 0;
-                break;
             }
             if(pagina==2){
-                
+                al_draw_text(bigfont,al_map_rgb(0,0,0),screenX/2,130,ALLEGRO_ALIGN_CENTER,"Como jogar Tri-Angle");
+                al_draw_text(medfont,al_map_rgb(0,0,0),screenX/2,180,ALLEGRO_ALIGN_CENTER,"Como posicionar/movimentar as peças");
+                al_draw_multiline_text(smallfont,al_map_rgb(0,0,0),screenX/2-440,220,450,20,0,"Na fase de posicionamento, basta clicar na casa em que deseja posicionar uma ficha e ela será posicionada imediatamente.");
+                al_draw_multiline_text(smallfont,al_map_rgb(0,0,0),screenX/2+20,220,450,20,0,"Na fase de movimento, o jogador deve clicar em uma das suas peças posicionadas para selecioná-la e então clicar na casa em que deseja posicioná-la.\nObs: A peça selecionada será destacada em amarelo");
+                al_draw_text(medfont,al_map_rgb(0,0,0),screenX/2,420,ALLEGRO_ALIGN_CENTER,"Movimentos Permitidos");
+                al_draw_multiline_text(smallfont,al_map_rgb(0,0,0),screenX/2-400,470,800,20,0,"No jogo TRI-Angle, as peças podem mover-se para um espaço vazio adjacente OU para um espaço vazio adjacente a outra peça em linha reta.\nDurante a fase de movimento, o jogo mostrará ao jogador quais movimentos são possíveis com cada peça através de uma linha da cor do jogador.");
                 redraw = 0;
-                break;
             }
             if(pagina==3){
                 
                 redraw = 0;
-                break;
             }
+            al_flip_display();
         }
     }
+    al_destroy_bitmap(bg);
+    al_destroy_bitmap(tab);
 }
 
 int main(){
@@ -1159,7 +1182,7 @@ int main(){
         if(help){
             al_stop_timer(timer);
             al_set_timer_count(timer,0);
-            ajudaScreen(queue,bigfont,medfont,smallfont,&exit,&help);
+            ajudaScreen(queue,bigfont,medfont,smallfont,&exit,&help,&menu);
         }
         if(menu){
             int yOff = 200;
