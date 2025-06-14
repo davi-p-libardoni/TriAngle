@@ -1109,7 +1109,11 @@ void ajudaScreen(ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_FONT *bigfont,ALLEGRO_FONT *
                 redraw = 0;
             }
             if(pagina==3){
-                
+                al_draw_text(bigfont,al_map_rgb(0,0,0),screenX/2,130,ALLEGRO_ALIGN_CENTER,"Empate");
+                al_draw_multiline_text(smallfont,al_map_rgb(0,0,0),screenX/2,190,700,20,ALLEGRO_ALIGN_CENTER,"Caso uma partida se prolongue, será considerada empatada ao chegar no turno 50.");
+                al_draw_text(bigfont,al_map_rgb(0,0,0),screenX/2,290,ALLEGRO_ALIGN_CENTER,"Recursos");
+                al_draw_multiline_text(smallfont,al_map_rgb(0,0,0),screenX/2-230,350,470,20,ALLEGRO_ALIGN_CENTER,"SALVAR:\nPermite salvar a situação atual da partida para ser retomada em outro momento.");
+                al_draw_multiline_text(smallfont,al_map_rgb(0,0,0),screenX/2+230,350,470,20,ALLEGRO_ALIGN_CENTER,"PAUSAR:\nPermite parar temporariamente o andamento da partida, sem atualizar o temporizador, para retomar quando desejado");
                 redraw = 0;
             }
             al_flip_display();
