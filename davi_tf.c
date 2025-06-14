@@ -24,8 +24,6 @@ typedef struct{
 } Save;
 
 void jogarPartida(int modo,int vezJ,int tabuleiro[3][3],int fichas[2],int jogador,int tempo,int turno,ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_COLOR blue, ALLEGRO_COLOR red,int *exit,int *pvp,int *menu, ALLEGRO_TIMER *timer, Ponto tPts[7],int loaded);
-void partidaPvP(int tabuleiro[3][3],int fichas[2],int jogador,int tempo,int turno,ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_COLOR blue, ALLEGRO_COLOR red,int *exit,int *pvp,int *menu, ALLEGRO_TIMER *timer, Ponto tPts[7],int loaded);
-void partidaPvC(int tabuleiro[3][3],int fichas[2],int jogador,int vezJ,int tempo,int turno,ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,ALLEGRO_EVENT_QUEUE *queue,ALLEGRO_COLOR blue, ALLEGRO_COLOR red,int *exit,int *pvc,int *menu, ALLEGRO_TIMER *timer, Ponto tPts[7],int loaded);
 void deleteSave(int modo);
 
 int inRange(int n,int target,int r){
