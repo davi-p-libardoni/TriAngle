@@ -637,14 +637,14 @@ void pauseScreen(ALLEGRO_FONT *bigfont,ALLEGRO_FONT *medfont,int *pvx, int *pvxr
 
         if(evento.type==ALLEGRO_EVENT_TIMER) redraw = 1;
 
-        eventExit(evento,&rodando,pvx,&rodando,exit);
+        eventExit(evento,&rodando,pvx,pvxrodando,exit);
 
         if(evento.type==ALLEGRO_EVENT_MOUSE_BUTTON_UP && evento.mouse.button==1){
             if(inRange(evento.mouse.x,screenX/2,150)){
                 if(inRange(evento.mouse.y,yOff+30,30)) rodando = 0;
                 if(inRange(evento.mouse.y,yOff*2+30,30)) {salvarJogo(modo,vezJ,tabuleiro,fichas,jogador,tempo,turno); save = 1; redraw = 1;}
                 if(inRange(evento.mouse.y,yOff*3+30,30)) {*menu = 1; *pvx = 0; rodando = 0; *pvxrodando = 0;}
-                if(inRange(evento.mouse.y,yOff*4+30,30)) {*exit = 1; rodando = 0;}
+                if(inRange(evento.mouse.y,yOff*4+30,30)) {*exit = 1; *pvx = 0; rodando = 0; *pvxrodando = 0;}
             }
         }
 
@@ -820,7 +820,7 @@ void jogarPartida(int modo,int vezJ, int tabuleiro[3][3],int fichas[2],int jogad
     ALLEGRO_BITMAP *partidabg = al_load_bitmap("assets/casteloBG.png"), *blueChip = al_load_bitmap("assets/blueChip.png"),*redChip = al_load_bitmap("assets/redChip.png");
     
     al_set_timer_count(timer,(int64_t)tempo/al_get_timer_speed(timer));
-    if(modo==0) al_resume_timer(timer);
+    if(modo==0 || (modo==1 && tempo>0)) al_resume_timer(timer);
     timerRedraw = (modo==0)?1:0;
     int segundosTotal,minutos,segundos;
     while(rodando){
